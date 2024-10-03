@@ -1,0 +1,8 @@
+{
+    "LoginView":{
+        "title": "Logearse",
+        "email": "Correo",
+        "password": "Contraseña",
+        "buttonLogin": "Logearse"
+    }
+}
