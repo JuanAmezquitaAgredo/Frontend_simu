@@ -1,5 +1,6 @@
 import React from "react";
 import Input from "../input/input";
+import styles from "./styles.module.css"
 
 interface GroupInputProps{
     label:string;
@@ -10,7 +11,7 @@ interface GroupInputProps{
 }
 export default function GroupInput({label,type, onChange, name, value}:GroupInputProps): React.ReactElement{
     return (
-        <div>
+        <div className={styles.div}>
             <label>{label}</label>
             <Input type={type} onChange={onChange} name={name} value={value}/>
         </div>

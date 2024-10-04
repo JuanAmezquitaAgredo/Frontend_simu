@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { NextIntlClientProvider } from "next-intl";
-import { getLocale,getMessages } from "next-intl/server";
+import { getLocale, getMessages } from "next-intl/server";
 import ProviderSession from "./providerSession";
 import React from "react";
 import "./globals.css";
+import StyledComponentsRegistry from "./src/app/StyledComponentsRegistry";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -32,11 +33,13 @@ export default async function RootLayout({
   return (
     <html lang={locale}>
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
-        <NextIntlClientProvider messages={messages}>
-          <ProviderSession>
-            {children}
-          </ProviderSession>
-        </NextIntlClientProvider>
+        <StyledComponentsRegistry>
+          <NextIntlClientProvider messages={messages}>
+            <ProviderSession>
+              {children}
+            </ProviderSession>
+          </NextIntlClientProvider>
+        </StyledComponentsRegistry>
       </body>
     </html>
   );
