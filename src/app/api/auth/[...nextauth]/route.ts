@@ -1,12 +1,13 @@
-import NextAuth from "next-auth"
-import CredentialsProvider from "next-auth/providers/credentials"
+import NextAuth, { NextAuthOptions } from "next-auth";
+import CredentialsProvider from "next-auth/providers/credentials";
+import { User } from "next-auth"; // Tipo User de NextAuth
 
-interface User  {
-    name: string;
-    email: string;
+// Define un tipo de usuario personalizado que extienda el User de NextAuth
+interface CustomUser extends User {
     tokenJWT: string;
 }
 
+// Opciones de NextAuth con tipado correcto
 const handler = NextAuth({
     providers: [
         CredentialsProvider({
@@ -15,26 +16,28 @@ const handler = NextAuth({
                 email: { label: "Email", type: "text" },
                 password: { label: "Password", type: "password" },
             },
-            async authorize(credentials: Record<"email" | "password", string> | any) {
-                const user = await authenticateUser(credentials?.email, credentials?.password);
+            async authorize(credentials, req) {
+                if (!credentials?.email || !credentials?.password) {
+                    throw new Error("Missing credentials");
+                }
+
+                const user = await authenticateUser(credentials.email, credentials.password);
+
                 if (user) {
-                    return user;
+                    return user as CustomUser; // Devolver el usuario tipado como CustomUser
                 } else {
-                    throw new Error("Invalid email or password");
+                    return null; // Retorna null si la autenticación falla
                 }
             }
         }),
     ],
-    pages: {
-        signIn: "/login",
-        error: "/login"
-    },
     callbacks: {
-        async jwt({ token, user }:{ token: any, user: User | any}        ) {
+        async jwt({ token, user }) {
             if (user) {
-                token.name = user.name;
-                token.email = user.email;
-                token.tokenJWT = user.tokenJWT;
+                const customUser = user as CustomUser;
+                token.name = customUser.name;
+                token.email = customUser.email;
+                token.tokenJWT = customUser.tokenJWT;
             }
             return token;
         },
@@ -42,20 +45,24 @@ const handler = NextAuth({
             if (token) {
                 session.user.name = token.name as string;
                 session.user.email = token.email as string;
-                session.user.tokenJWT = token.tokenJWT as string;
+                (session.user as CustomUser).tokenJWT = token.tokenJWT as string;
             }
             return session;
         }
     },
-    secret: 'd1FE7uWJJr0qkEK3MRtWbnj40Asoiplw6LSxetzPmRo=',
-    debug: true,
+    secret: process.env.NEXTAUTH_SECRET,
     session: {
-        strategy: "jwt"
+        strategy: "jwt",
+    },
+    pages: {
+        signIn: "/login",
+        error: "/login"
     }
-})
+} as NextAuthOptions);
 
-export { handler as GET, handler as POST }
+export { handler as GET, handler as POST };
 
+// Función de autenticación de usuarios
 async function authenticateUser(email: string, password: string) {
     const response = await fetch(`${process.env.API_URL}/auth/login`, {
         method: 'POST',
@@ -63,7 +70,7 @@ async function authenticateUser(email: string, password: string) {
             'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-            username: email,  // Cambia esto si "email" no corresponde a "username"
+            username: email,
             password: password
         })
     });
@@ -72,11 +79,11 @@ async function authenticateUser(email: string, password: string) {
 
     if (response.ok && data.token) {
         return { 
-            id: "1",  // Cambia esto si tienes un ID real que asignar
+            name: "User Name",
             email: email,
             tokenJWT: data.token 
-        };
+        } as CustomUser;
     }
 
-    return null;  // Retorna null si no hay un usuario válido
+    return null;
 }

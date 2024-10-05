@@ -5,11 +5,11 @@ import { useRouter } from "next/navigation";
 export default function HomePage() {
   
   const router = useRouter();
-  const { status } = useSession();
+  const { status} = useSession();
 
   const handleSignOut = async () => {
     await signOut({ redirect: false });
-    router.push("/");
+    router.replace("/");
   };
 
   return (
