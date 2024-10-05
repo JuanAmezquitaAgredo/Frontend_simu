@@ -8,10 +8,13 @@ import { useRouter } from "next/navigation";
 export default function LoginView(): React.ReactElement{
 
   const { status, data: session } = useSession();
-  const router = useRouter();
+  function useCustomHook() {
+    const router = useRouter();
+    return router;
+  }
 
   if(status === "authenticated"){
-    router.replace("/home")
+    useCustomHook().replace("/home")
   }
 
   return(

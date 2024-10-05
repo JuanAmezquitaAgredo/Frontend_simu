@@ -2,14 +2,19 @@
 import { signOut, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
-export default function homePage(){
+export default function HomePage() {
 
+  function useCustomHook() {
     const router = useRouter();
-  const { status, data: session } = useSession();
+    return router;
+  }
+  
+  const { status } = useSession();
+  // const { status, data: session } = useSession();
 
   const handleSignOut = async () => {
     await signOut({ redirect: false });
-    router.push("/");
+    useCustomHook().push("/");
   };
 
   return (
