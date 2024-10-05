@@ -5,22 +5,19 @@ import Selectlanguage from "@/components/UI/SelectLanguage/SelectLanguage";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
-export default function LoginView(): React.ReactElement{
+export default function LoginView(): React.ReactElement {
 
-  const { status, data: session } = useSession();
-  function useCustomHook() {
-    const router = useRouter();
-    return router;
+  const { status } = useSession();
+  const router = useRouter();
+
+  if (status === "authenticated") {
+    router.replace("/home")
   }
 
-  if(status === "authenticated"){
-    useCustomHook().replace("/home")
-  }
-
-  return(
+  return (
     <main>
-      <Selectlanguage/>
-      <FormLogin/>
+      <Selectlanguage />
+      <FormLogin />
     </main>
   )
 };
