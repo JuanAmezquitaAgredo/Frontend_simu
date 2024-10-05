@@ -1,82 +1,82 @@
-import NextAuth, { User } from "next-auth";
-import CredentialsProvider from "next-auth/providers/credentials";
+import NextAuth from "next-auth"
+import CredentialsProvider from "next-auth/providers/credentials"
 
-// Extender la interfaz de User para incluir el token
-interface ExtendedUser extends User {
-  token: string;
+interface User  {
+    name: string;
+    email: string;
+    tokenJWT: string;
 }
 
 const handler = NextAuth({
-  providers: [
-    CredentialsProvider({
-      name: "Credentials",
-      credentials: {
-        email: { label: "Email", type: "email", placeholder: "example@gmail.com" },
-        password: { label: "Password", type: "password" },
-      },
-      async authorize(credentials: Record<"email" | "password", string> | undefined): Promise<ExtendedUser | null> {
-        const { email, password } = credentials || {};
-        console.log("Credenciales:", email, password);
-        
-        // Verificar si email y password están presentes
-        if (!email || !password) {
-          console.log("Email o contraseña no proporcionados.");
-          return null;
+    providers: [
+        CredentialsProvider({
+            name: "credentials",
+            credentials: {
+                email: { label: "Email", type: "text" },
+                password: { label: "Password", type: "password" },
+            },
+            async authorize(credentials: Record<"email" | "password", string> | any) {
+                const user = await authenticateUser(credentials?.email, credentials?.password);
+                if (user) {
+                    return user;
+                } else {
+                    throw new Error("Invalid email or password");
+                }
+            }
+        }),
+    ],
+    pages: {
+        signIn: "/login",
+        error: "/login"
+    },
+    callbacks: {
+        async jwt({ token, user }:{ token: any, user: User | any}        ) {
+            if (user) {
+                token.name = user.name;
+                token.email = user.email;
+                token.tokenJWT = user.tokenJWT;
+            }
+            return token;
+        },
+        async session({ session, token }) {
+            if (token) {
+                session.user.name = token.name as string;
+                session.user.email = token.email as string;
+                session.user.tokenJWT = token.tokenJWT as string;
+            }
+            return session;
         }
+    },
+    secret: 'd1FE7uWJJr0qkEK3MRtWbnj40Asoiplw6LSxetzPmRo=',
+    debug: true,
+    session: {
+        strategy: "jwt"
+    }
+})
 
-        try {
-          const userLogin = await login(email, password);
-          console.log("Respuesta del backend:", userLogin);
+export { handler as GET, handler as POST }
 
-          // Verificar que la respuesta contiene el usuario y el token
-          if (!userLogin || !userLogin.user || !userLogin.token) {
-            console.log("Usuario o token no encontrados en la respuesta.");
-            return null;
-          }
-
-          return {
-            ...userLogin.user, 
-            token: userLogin.token 
-          };
-        } catch (error) {
-          console.log("Error en el proceso de autorización:", error);
-          return null;
-        }
-      },
-    }),
-  ],
-  pages: {
-    signIn: "/",
-    error: "/",
-  },
-  secret: process.env.NEXTAUTH_SECRET,
-});
-
-async function login(email: string, password: string) {
-  try {
-    const response = await fetch("https://simuate-test-backend-1.onrender.com/api/auth/login", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ email, password }),
+async function authenticateUser(email: string, password: string) {
+    const response = await fetch(`${process.env.API_URL}/auth/login`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            username: email,  // Cambia esto si "email" no corresponde a "username"
+            password: password
+        })
     });
 
-    if (!response.ok) {
-      throw new Error(`Error con la respuesta: ${response.status} - ${response.statusText}`);
-    }
-
     const data = await response.json();
-    console.log("Datos recibidos del backend:", data);
-    
-    if (!data || !data.user || !data.token) {
-      throw new Error("La respuesta no contiene un usuario o token válido.");
+
+    if (response.ok && data.token) {
+        return { 
+            id: "1",  // Cambia esto si tienes un ID real que asignar
+            email: email,
+            tokenJWT: data.token 
+        };
     }
 
-    return data;
-  } catch (error: unknown) {
-    console.error("Error con el login:", error);
-  }
+    return null;  // Retorna null si no hay un usuario válido
 }
-
-export { handler as GET, handler as POST };
